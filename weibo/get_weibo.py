@@ -103,12 +103,8 @@ def write_all_info(original_html):
 	get_decoded_html = decode_html(original_html)
 	(nick_name_list, nick_name_href_list, content_text_list, time_list) = get_details(get_decoded_html)
 	number_info_list = get_number_info(get_decoded_html)
-	# nick_name_list=nick_name
-	# nickname_href_list=nickname_href
-	# content_text_list=content_text
-	# time_list=times
-	# number_info_list=number_info
-	path='/home/ruansongsong/work/ruansongsong/'
+	#文件保存路径
+	path='/home/ruansongsong/work/ruansongsong/' 
 	isExists=os.path.exists(path)
 	if not isExists:
 	    os.makedirs(path)
@@ -123,18 +119,3 @@ def write_all_info(original_html):
 			j+=1
 			temp+=1
 		write_all_list.close()
-#keyword="天津"
-# i=1#设置第一页
-# while (i<60):
-# 	url="http://s.weibo.com/weibo/%25E5%25A5%2587%25E8%2591%25A9%25E8%25AF%25B4&page="+str(i)
-# 	print url
-# 	html=get_html(url)
-# 	number_info=get_number_info(html)
-# 	print len(number_info)
-# 	(nick_name,nickname_href,content_text,times)=get_details(html)
-# 	write_all_info(nick_name,nickname_href,content_text,times,number_info)
-# 	#设置时间休眠，不然很快被识别成爬虫了
-# 	sleeptime_rand = random.randint(1,30)
-# 	print sleeptime_rand
-# 	time.sleep(sleeptime_rand)
-# 	i+=1
