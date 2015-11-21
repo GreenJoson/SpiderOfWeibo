@@ -4,6 +4,9 @@ import urllib2
 import re
 import json
 import cookielib
+import random
+import time
+import Image
 import post_encode
 import get_weibo
 class WeiboLogin:
@@ -12,7 +15,16 @@ class WeiboLogin:
 	def __init__(self, user_name, user_password):
 		self.user_name = user_name
 		self.user_password = user_password
-		self.pre_login_url = "http://login.sina.com.cn/sso/prelogin.php?entry=weibo&callback=sinaSSOController.preloginCallBack&su=&rsakt=mod&client=ssologin.js(v1.4.11)&_=1379834957683"
+ 		su = post_encode.encrypt_user_name(user_name)
+		# ?entry=weibo
+		# &callback=sinaSSOController.preloginCallBack
+		# &su=MTg1MzU0Nzc5MDE%3D
+		# &rsakt=mod
+		# &checkpin=1
+		# &client=ssologin.js(v1.4.18)
+		# &_=1448083786752
+		curr_time = str(int(time.time()))
+		self.pre_login_url = "http://login.sina.com.cn/sso/prelogin.php?entry=weibo&checkpin=1&callback=sinaSSOController.preloginCallBack&rsakt=mod&client=ssologin.js(v1.4.18)" + "&su=" + su +"&_=" + curr_time
 		self.login_url = "http://login.sina.com.cn/sso/login.php?client=ssologin.js(v1.4.11)"
 		self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:42.0) Gecko/20100101 Firefox/42.0'}
 	#cookie非常重要
@@ -31,13 +43,38 @@ class WeiboLogin:
 		#匹配返回的server_data
 		p = re.compile('\((.*)\)')
 		get_data = p.search(server_data).group(1)
-		# print p.search(server_data).group(0)		
+		print p.search(server_data).group(1)		
 		get_json = json.loads(get_data)
 		server_time = get_json['servertime']
 		nonce = get_json['nonce']
 		pubkey = get_json['pubkey']
 		rsakv = get_json['rsakv']
-		return (server_time, nonce, pubkey, rsakv)
+		pcid = get_json['pcid']
+		show_pin = 0
+		show_pin = get_json['showpin']
+		# print show_pin
+		# try:
+		# 	show_pin = get_json['showpin']
+		# except:
+		# 	print "无验证码"
+		return (server_time, nonce, pubkey, rsakv, show_pin, pcid)
+	#此函数获取验证码
+	def get_pin(self, pcid):
+		pin_code_url = "http://login.sina.com.cn/cgi/pin.php"
+		#产生随机数
+		#pcid = "xd-01ee4d114e1c59964396d92937c2de294e20"
+		url_random = str(int(random.random() * 100000000))
+		pin_code_url = pin_code_url + "?r=" + url_random + "&s=0" + "&p=" + pcid
+		pin_code = urllib2.urlopen(pin_code_url).read()
+		f = open("/home/ruansongsong/work/code", "wb")
+		f.write(pin_code)
+		f.close()
+		#显示验证码图片
+		image = Image.open("/home/ruansongsong/work/code")
+		image.show()
+		#输入验证码
+		input_code = raw_input()
+		return input_code		        		
 	#返回登陆成功的url
 	def get_location_replace(self, get_html):
 		p = re.compile('location\.replace\([\'"](.*?)[\'"]\)')
@@ -48,9 +85,13 @@ class WeiboLogin:
 		#调用cookie函数
 		self.enableCookies()
 		#调用get_server_data函数
-		(server_time, nonce, pubkey, rsakv) = self.get_server_data()
-		#调用pos_encode函数
-		post_data = post_encode.post_encode(self.user_name, self.user_password, server_time, nonce, pubkey, rsakv)
+		(server_time, nonce, pubkey, rsakv, show_pin, pcid) = self.get_server_data()
+		if (show_pin):
+			get_input_code = self.get_pin(pcid)
+			#调用pos_encode函数
+			post_data = post_encode.post_encode(self.user_name, self.user_password, server_time, nonce, pubkey, rsakv, get_input_code)
+		else:
+			post_data = post_encode.post_encode(self.user_name, self.user_password, server_time, nonce, pubkey, rsakv)
 		#向服务器发送请求
 		req = urllib2.Request(self.login_url, post_data, self.headers)
 		get_html = urllib2.urlopen(req).read()

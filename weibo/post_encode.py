@@ -27,7 +27,7 @@ def encrypt_user_password(original_user_password, server_time, nonce , pubkey):
 	encrypted_user_password = binascii.b2a_hex(encrypted_user_password)
 	return encrypted_user_password
 #此函数将加密后的信息构成post数据
-def post_encode(user_name, user_password, server_time, nonce, pubkey, rsakv):
+def post_encode(user_name, user_password, server_time, nonce, pubkey, rsakv, pin_code = 0):
 	#调用encrypt_user_name函数
 	get_encrypt_user_name = encrypt_user_name(user_name)
 	#调用encrypt_user_password函数
@@ -52,6 +52,8 @@ def post_encode(user_name, user_password, server_time, nonce, pubkey, rsakv):
 			'useticket':'1',
 			'vsnf':'1 '
 	}
+	if(pin_code):
+		post_data['door'] = pin_code
 	#将post数据编码
 	get_post_data = urllib.urlencode(post_data)	
 	return get_post_data
